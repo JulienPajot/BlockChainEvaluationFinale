@@ -47,7 +47,7 @@ contract SimpleVotingSystemTest is Test {
   function test_AddCandidate_AsOwner() public {
     string memory candidateName = "Alice";
     vm.startPrank(OWNER);
-    votingSystem.addCandidate(candidateName);
+    votingSystem.addCandidate(candidateName,voter1);
     vm.stopPrank();
 
     assertEq(votingSystem.getCandidatesCount(), 1);
@@ -59,9 +59,9 @@ contract SimpleVotingSystemTest is Test {
 
   function test_AddCandidate_MultipleCandidates() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
-    votingSystem.addCandidate("Bob");
-    votingSystem.addCandidate("Charlie");
+    votingSystem.addCandidate("Alice",voter1);
+    votingSystem.addCandidate("Bob",voter2);
+    votingSystem.addCandidate("Charlie",voter3);
     vm.stopPrank();
 
     assertEq(votingSystem.getCandidatesCount(), 3);
@@ -82,14 +82,14 @@ contract SimpleVotingSystemTest is Test {
   function test_AddCandidate_OnlyOwner() public {
     vm.startPrank(voter1);
     vm.expectRevert();
-    votingSystem.addCandidate("Unauthorized Candidate");
+    votingSystem.addCandidate("Unauthorized Candidate",voter1);
     vm.stopPrank();
   }
 
   function test_AddCandidate_EmptyName() public {
     vm.startPrank(OWNER);
     vm.expectRevert("Candidate name cannot be empty");
-    votingSystem.addCandidate("");
+    votingSystem.addCandidate("",voter1);
     vm.stopPrank();
   }
 
@@ -97,7 +97,7 @@ contract SimpleVotingSystemTest is Test {
     // Un nom avec seulement des espaces devrait être accepté (selon l'implémentation actuelle)
     // Mais testons avec un nom valide contenant des espaces
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("John Doe");
+    votingSystem.addCandidate("John Doe",voter1);
     vm.stopPrank();
     assertEq(votingSystem.getCandidatesCount(), 1);
     SimpleVotingSystem.Candidate memory candidate = votingSystem.getCandidate(1);
@@ -106,7 +106,7 @@ contract SimpleVotingSystemTest is Test {
 
   function test_AdminRole_CanAddCandidate() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     vm.stopPrank();
 
     assertEq(votingSystem.getCandidatesCount(), 1);
@@ -115,14 +115,14 @@ contract SimpleVotingSystemTest is Test {
   function test_NonAdmin_CannotAddCandidate() public {
     vm.startPrank(voter1);
     vm.expectRevert();
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     vm.stopPrank();
   }
   function test_AddCandidate_WrongWorkflow_Revert() public {
     vm.startPrank(OWNER);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.expectRevert("Candidate registration is not allowed at this stage");
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     vm.stopPrank();
 }
 
@@ -131,8 +131,8 @@ contract SimpleVotingSystemTest is Test {
 
   function test_Vote_ValidCandidate() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
-    votingSystem.addCandidate("Bob");
+    votingSystem.addCandidate("Alice",voter1);
+    votingSystem.addCandidate("Bob",voter2);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -147,8 +147,8 @@ contract SimpleVotingSystemTest is Test {
 
   function test_Vote_MultipleVoters() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
-    votingSystem.addCandidate("Bob");
+    votingSystem.addCandidate("Alice",voter1);
+    votingSystem.addCandidate("Bob",voter2);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -173,7 +173,7 @@ contract SimpleVotingSystemTest is Test {
 
   function test_Vote_DuplicateVote() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -189,7 +189,7 @@ contract SimpleVotingSystemTest is Test {
 
   function test_Vote_InvalidCandidateId_Zero() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -201,7 +201,7 @@ contract SimpleVotingSystemTest is Test {
 
   function test_Vote_InvalidCandidateId_TooHigh() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -213,8 +213,8 @@ contract SimpleVotingSystemTest is Test {
 
   function test_Vote_InvalidCandidateId_TooHigh_WithMultipleCandidates() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
-    votingSystem.addCandidate("Bob");
+    votingSystem.addCandidate("Alice",voter1);
+    votingSystem.addCandidate("Bob",voter2);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -226,7 +226,7 @@ contract SimpleVotingSystemTest is Test {
 
   function test_Vote_OwnerCanVote() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -239,7 +239,7 @@ contract SimpleVotingSystemTest is Test {
   }
   function test_Vote_WrongWorkflow_Revert() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     vm.stopPrank();
 
     vm.startPrank(voter1);
@@ -253,7 +253,7 @@ contract SimpleVotingSystemTest is Test {
 
   function test_GetTotalVotes_InitialState() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     vm.stopPrank();
 
     assertEq(votingSystem.getTotalVotes(1), 0);
@@ -261,8 +261,8 @@ contract SimpleVotingSystemTest is Test {
 
   function test_GetTotalVotes_AfterVotes() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
-    votingSystem.addCandidate("Bob");
+    votingSystem.addCandidate("Alice",voter1);
+    votingSystem.addCandidate("Bob",voter2);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -289,7 +289,7 @@ contract SimpleVotingSystemTest is Test {
 
   function test_GetTotalVotes_InvalidCandidateId_TooHigh() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     vm.stopPrank();
 
     vm.expectRevert("Invalid candidate ID");
@@ -306,17 +306,17 @@ contract SimpleVotingSystemTest is Test {
     assertEq(votingSystem.getCandidatesCount(), 0);
 
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     vm.stopPrank();
     assertEq(votingSystem.getCandidatesCount(), 1);
 
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Bob");
+    votingSystem.addCandidate("Bob",voter2);
     vm.stopPrank();
     assertEq(votingSystem.getCandidatesCount(), 2);
 
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Charlie");
+    votingSystem.addCandidate("Charlie",voter3);
     vm.stopPrank();
     assertEq(votingSystem.getCandidatesCount(), 3);
   }
@@ -325,8 +325,8 @@ contract SimpleVotingSystemTest is Test {
 
   function test_GetCandidate_ValidId() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
-    votingSystem.addCandidate("Bob");
+    votingSystem.addCandidate("Alice",voter1);
+    votingSystem.addCandidate("Bob",voter2);
     vm.stopPrank();
 
     SimpleVotingSystem.Candidate memory candidate1 = votingSystem.getCandidate(1);
@@ -342,7 +342,7 @@ contract SimpleVotingSystemTest is Test {
 
   function test_GetCandidate_WithVotes() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -367,7 +367,7 @@ contract SimpleVotingSystemTest is Test {
 
   function test_GetCandidate_InvalidId_TooHigh() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     vm.stopPrank();
 
     vm.expectRevert("Invalid candidate ID");
@@ -379,9 +379,9 @@ contract SimpleVotingSystemTest is Test {
   function test_CompleteVotingScenario() public {
     // Ajouter plusieurs candidats
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
-    votingSystem.addCandidate("Bob");
-    votingSystem.addCandidate("Charlie");
+    votingSystem.addCandidate("Alice",voter1);
+    votingSystem.addCandidate("Bob",voter2);
+    votingSystem.addCandidate("Charlie",voter3);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -421,7 +421,7 @@ contract SimpleVotingSystemTest is Test {
 
   function test_VoteCount_IncrementsCorrectly() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -444,7 +444,7 @@ contract SimpleVotingSystemTest is Test {
     vm.assume(bytes(_name).length > 0);
 
     vm.startPrank(OWNER);
-    votingSystem.addCandidate(_name);
+    votingSystem.addCandidate(_name,voter1);
     vm.stopPrank();
 
     assertEq(votingSystem.getCandidatesCount(), 1);
@@ -458,7 +458,7 @@ contract SimpleVotingSystemTest is Test {
     uint8 numCandidates = 10;
     vm.startPrank(OWNER);
     for (uint8 i = 1; i <= numCandidates; i++) {
-      votingSystem.addCandidate(string(abi.encodePacked("Candidate", i)));
+      votingSystem.addCandidate(string(abi.encodePacked("Candidate", i)),voter1);
     }
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
@@ -481,7 +481,7 @@ contract SimpleVotingSystemTest is Test {
     _numVotes = uint8(bound(_numVotes, 1, 50));
 
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -501,24 +501,26 @@ contract SimpleVotingSystemTest is Test {
 
   function test_CandidatesMapping_Public() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
-    votingSystem.addCandidate("Bob");
+    votingSystem.addCandidate("Alice",voter1);
+    votingSystem.addCandidate("Bob",voter2);
     vm.stopPrank();
 
-    (uint id1, string memory name1, uint voteCount1) = votingSystem.candidates(1);
+    (uint id1, string memory name1, uint voteCount1,address owner1) = votingSystem.candidates(1);
     assertEq(id1, 1);
     assertEq(name1, "Alice");
     assertEq(voteCount1, 0);
+    assertEq(owner1, voter1);
 
-    (uint id2, string memory name2, uint voteCount2) = votingSystem.candidates(2);
+    (uint id2, string memory name2, uint voteCount2,address owner2) = votingSystem.candidates(2);
     assertEq(id2, 2);
     assertEq(name2, "Bob");
     assertEq(voteCount2, 0);
+    assertEq(owner2, voter2);
   }
 
   function test_VotersMapping_Public() public {
     vm.startPrank(OWNER);
-    votingSystem.addCandidate("Alice");
+    votingSystem.addCandidate("Alice",voter1);
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
@@ -548,5 +550,46 @@ contract SimpleVotingSystemTest is Test {
     vm.expectRevert();
     votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
-}
+  }
+
+  // ============ Tests pour fundCandidate ============
+  function test_FounderCanFundCandidate() public {
+    vm.startPrank(OWNER);
+    votingSystem.addCandidate("Alice", voter1);
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.FOUND_CANDIDATES);
+    vm.stopPrank();
+
+    uint amount = 1 ether;
+    vm.startPrank(OWNER); 
+    votingSystem.fundCandidate{value: amount}(1);
+    vm.stopPrank();
+    assertEq(voter1.balance, 10 ether + amount); 
+  }
+  function test_NonFounderCannotFundCandidate() public {
+    vm.startPrank(OWNER);
+    votingSystem.addCandidate("Alice", voter1);
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.FOUND_CANDIDATES);
+    vm.stopPrank();
+
+    uint amount = 1 ether;
+
+    vm.startPrank(voter2);
+    vm.expectRevert();
+    votingSystem.fundCandidate{value: amount}(1);
+    vm.stopPrank();
+  }
+
+  function test_FundCandidate_ZeroValueRevert() public {
+    vm.startPrank(OWNER);
+    votingSystem.addCandidate("Alice", voter1);
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.FOUND_CANDIDATES);
+    vm.stopPrank();
+
+    vm.startPrank(OWNER);
+    vm.expectRevert("No funds sent");
+    votingSystem.fundCandidate{value: 0}(1);
+    vm.stopPrank();
+  }
+
+
 }

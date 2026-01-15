@@ -7,11 +7,13 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 contract SimpleVotingSystem  is AccessControl {
     
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant FOUNDER_ROLE = keccak256("FOUNDER_ROLE");
     
     struct Candidate {
         uint id;
         string name;
         uint voteCount;
+        address wallet;
     }
 
     enum WorkflowStatus {
@@ -28,15 +30,16 @@ contract SimpleVotingSystem  is AccessControl {
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
+        _grantRole(FOUNDER_ROLE, msg.sender);
 
         currentStatus = WorkflowStatus.REGISTER_CANDIDATES;
     }
 
-    function addCandidate(string memory _name) external onlyRole(ADMIN_ROLE) {
+    function addCandidate(string memory _name, address _wallet) external onlyRole(ADMIN_ROLE) {
         require (currentStatus == WorkflowStatus.REGISTER_CANDIDATES, "Candidate registration is not allowed at this stage");
         require(bytes(_name).length > 0, "Candidate name cannot be empty");
         uint candidateId = candidateIds.length + 1;
-        candidates[candidateId] = Candidate(candidateId, _name, 0);
+        candidates[candidateId] = Candidate(candidateId, _name, 0,_wallet);
         candidateIds.push(candidateId);
     }
 
@@ -66,5 +69,14 @@ contract SimpleVotingSystem  is AccessControl {
 
     function setWorkflowStatus(WorkflowStatus _status) external onlyRole(ADMIN_ROLE) {
         currentStatus = _status;
+    }
+
+    function fundCandidate(uint _candidateId) external payable onlyRole(FOUNDER_ROLE) {
+        require(currentStatus == WorkflowStatus.FOUND_CANDIDATES, "Funding is not allowed at this stage");
+        require(_candidateId > 0 && _candidateId <= candidateIds.length, "Invalid candidate ID");
+        require(msg.value > 0, "No funds sent");
+        
+        address candidateAddress = candidates[_candidateId].wallet; 
+        payable(candidateAddress).transfer(msg.value);
     }
 }
