@@ -9,7 +9,8 @@ contract SimpleVotingSystem  is AccessControl {
     
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant FOUNDER_ROLE = keccak256("FOUNDER_ROLE");
-    
+    bytes32 public constant WITHDRAWER_ROLE = keccak256("WITHDRAWER_ROLE");
+
     struct Candidate {
         uint id;
         string name;
@@ -31,13 +32,16 @@ contract SimpleVotingSystem  is AccessControl {
     mapping(uint => Candidate) public candidates;
     mapping(address => bool) public voters;
     uint[] private candidateIds;
-
+    
+    receive() external payable {}
+    fallback() external payable {}
+    
     constructor(address _nftAddress) {
         votingNFT = VotingNFT(_nftAddress);
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
         _grantRole(FOUNDER_ROLE, msg.sender);
-
+        _grantRole(WITHDRAWER_ROLE, msg.sender);
         currentStatus = WorkflowStatus.REGISTER_CANDIDATES;
         
     }
@@ -111,5 +115,12 @@ contract SimpleVotingSystem  is AccessControl {
     }
 
     return candidates[winningCandidateId];
-}
+    }
+
+    function withdrawFunds(address payable _to, uint _amount) external onlyRole(WITHDRAWER_ROLE) {
+        require(currentStatus == WorkflowStatus.COMPLETED, "Funds can only be withdrawn after completion");
+        require(_amount <= address(this).balance, "Not enough balance");
+
+        _to.transfer(_amount);
+    }
 }

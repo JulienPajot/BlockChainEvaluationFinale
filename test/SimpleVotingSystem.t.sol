@@ -687,4 +687,42 @@ function test_GetWinner_AfterCompletion() public {
     assertEq(winner.name, "Alice");
     assertEq(winner.voteCount, 2);
 }
+
+// ============ Tests pour withdrawFunds ============
+function test_WithdrawerCanWithdrawAfterCompletion() public {
+    vm.startPrank(OWNER);
+    votingSystem.addCandidate("Alice", voter1);
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.COMPLETED);
+    vm.stopPrank();
+
+    vm.deal(OWNER, 1 ether);
+    vm.startPrank(OWNER);
+    payable(address(votingSystem)).transfer(1 ether);
+    vm.stopPrank();
+    uint initialBalance = address(OWNER).balance;
+
+    vm.startPrank(OWNER); // owner a tous les rôles
+    votingSystem.withdrawFunds(payable(OWNER), 1 ether);
+    vm.stopPrank();
+
+    assertEq(address(OWNER).balance, initialBalance + 1 ether);
+}
+
+function test_NonWithdrawerCannotWithdraw() public {
+    address nonWithdrawer = voter1;
+
+    vm.startPrank(nonWithdrawer);
+    vm.expectRevert();
+    votingSystem.withdrawFunds(payable(nonWithdrawer), 1 ether);
+    vm.stopPrank();
+}
+
+function test_WithdrawBeforeCompletionReverts() public {
+    address withdrawer = OWNER; 
+
+    vm.startPrank(withdrawer);
+    vm.expectRevert("Funds can only be withdrawn after completion");
+    votingSystem.withdrawFunds(payable(withdrawer), 1 ether);
+    vm.stopPrank();
+}
 }
