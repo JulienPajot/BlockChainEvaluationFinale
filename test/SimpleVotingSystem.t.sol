@@ -31,7 +31,16 @@ contract SimpleVotingSystemTest is Test {
   }
 
 
- 
+  // ============ Tests pour Initialisation ============
+
+  function test_Initialisation() public {
+    assertEq(votingSystem.getCandidatesCount(), 0);
+    assertEq(
+    uint(votingSystem.currentStatus()),
+    uint(SimpleVotingSystem.WorkflowStatus.REGISTER_CANDIDATES)
+);
+  }
+
 
   // ============ Tests pour addCandidate ============
 
@@ -109,6 +118,14 @@ contract SimpleVotingSystemTest is Test {
     votingSystem.addCandidate("Alice");
     vm.stopPrank();
   }
+  function test_AddCandidate_WrongWorkflow_Revert() public {
+    vm.startPrank(OWNER);
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
+    vm.expectRevert("Candidate registration is not allowed at this stage");
+    votingSystem.addCandidate("Alice");
+    vm.stopPrank();
+}
+
 
   // ============ Tests pour vote ============
 
@@ -116,6 +133,7 @@ contract SimpleVotingSystemTest is Test {
     vm.startPrank(OWNER);
     votingSystem.addCandidate("Alice");
     votingSystem.addCandidate("Bob");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     vm.startPrank(voter1);
@@ -131,6 +149,7 @@ contract SimpleVotingSystemTest is Test {
     vm.startPrank(OWNER);
     votingSystem.addCandidate("Alice");
     votingSystem.addCandidate("Bob");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     vm.startPrank(voter1);
@@ -155,6 +174,7 @@ contract SimpleVotingSystemTest is Test {
   function test_Vote_DuplicateVote() public {
     vm.startPrank(OWNER);
     votingSystem.addCandidate("Alice");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     vm.startPrank(voter1);
@@ -170,6 +190,7 @@ contract SimpleVotingSystemTest is Test {
   function test_Vote_InvalidCandidateId_Zero() public {
     vm.startPrank(OWNER);
     votingSystem.addCandidate("Alice");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     vm.startPrank(voter1);
@@ -181,6 +202,7 @@ contract SimpleVotingSystemTest is Test {
   function test_Vote_InvalidCandidateId_TooHigh() public {
     vm.startPrank(OWNER);
     votingSystem.addCandidate("Alice");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     vm.startPrank(voter1);
@@ -193,6 +215,7 @@ contract SimpleVotingSystemTest is Test {
     vm.startPrank(OWNER);
     votingSystem.addCandidate("Alice");
     votingSystem.addCandidate("Bob");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     vm.startPrank(voter1);
@@ -204,6 +227,7 @@ contract SimpleVotingSystemTest is Test {
   function test_Vote_OwnerCanVote() public {
     vm.startPrank(OWNER);
     votingSystem.addCandidate("Alice");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     vm.startPrank(OWNER);
@@ -213,6 +237,17 @@ contract SimpleVotingSystemTest is Test {
     assertTrue(votingSystem.voters(OWNER));
     assertEq(votingSystem.getTotalVotes(1), 1);
   }
+  function test_Vote_WrongWorkflow_Revert() public {
+    vm.startPrank(OWNER);
+    votingSystem.addCandidate("Alice");
+    vm.stopPrank();
+
+    vm.startPrank(voter1);
+    vm.expectRevert("Voting is not allowed at this stage");
+    votingSystem.vote(1);
+    vm.stopPrank();
+}
+
 
   // ============ Tests pour getTotalVotes ============
 
@@ -228,6 +263,7 @@ contract SimpleVotingSystemTest is Test {
     vm.startPrank(OWNER);
     votingSystem.addCandidate("Alice");
     votingSystem.addCandidate("Bob");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     vm.startPrank(voter1);
@@ -307,6 +343,7 @@ contract SimpleVotingSystemTest is Test {
   function test_GetCandidate_WithVotes() public {
     vm.startPrank(OWNER);
     votingSystem.addCandidate("Alice");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     vm.startPrank(voter1);
@@ -345,6 +382,7 @@ contract SimpleVotingSystemTest is Test {
     votingSystem.addCandidate("Alice");
     votingSystem.addCandidate("Bob");
     votingSystem.addCandidate("Charlie");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     // Plusieurs votants votent
@@ -384,6 +422,7 @@ contract SimpleVotingSystemTest is Test {
   function test_VoteCount_IncrementsCorrectly() public {
     vm.startPrank(OWNER);
     votingSystem.addCandidate("Alice");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     // Voter plusieurs fois avec différents votants
@@ -421,6 +460,7 @@ contract SimpleVotingSystemTest is Test {
     for (uint8 i = 1; i <= numCandidates; i++) {
       votingSystem.addCandidate(string(abi.encodePacked("Candidate", i)));
     }
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     // Borner l'ID du candidat à une plage valide
@@ -442,6 +482,7 @@ contract SimpleVotingSystemTest is Test {
 
     vm.startPrank(OWNER);
     votingSystem.addCandidate("Alice");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     // Créer plusieurs votants et faire voter chacun une fois
@@ -478,6 +519,7 @@ contract SimpleVotingSystemTest is Test {
   function test_VotersMapping_Public() public {
     vm.startPrank(OWNER);
     votingSystem.addCandidate("Alice");
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
     vm.stopPrank();
 
     assertFalse(votingSystem.voters(voter1));
@@ -490,4 +532,21 @@ contract SimpleVotingSystemTest is Test {
     assertFalse(votingSystem.voters(voter2));
   }
 
+  // ============ Tests pour setWorkflowStatus ============
+  function test_SetWorkflowStatus_AsOwner() public {
+    vm.startPrank(OWNER);
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
+    vm.stopPrank();
+
+    assertEq(
+    uint(votingSystem.currentStatus()),
+    uint(SimpleVotingSystem.WorkflowStatus.VOTE)
+    );
+  }
+  function test_NonAdminCannotChangeWorkflow() public {
+    vm.startPrank(voter1);
+    vm.expectRevert();
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.VOTE);
+    vm.stopPrank();
+}
 }
