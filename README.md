@@ -1,6 +1,7 @@
 ## HASH des SC
 
 Voting NFT Hash : 0xB7e7744f5320e5F2BACc44f4344d84dB1EAfACAe
+
 Simple Voting Hash : 0xf951a53b96336e7Cbb40b4b169fE8ea0a4c69832
 
 
