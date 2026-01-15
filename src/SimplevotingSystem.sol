@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./VotingNFT.sol";
 
 contract SimpleVotingSystem  is AccessControl {
     
@@ -25,16 +26,20 @@ contract SimpleVotingSystem  is AccessControl {
     WorkflowStatus public currentStatus;
     uint public voteStartTime;
 
+    VotingNFT public votingNFT;
+
     mapping(uint => Candidate) public candidates;
     mapping(address => bool) public voters;
     uint[] private candidateIds;
 
-    constructor() {
+    constructor(address _nftAddress) {
+        votingNFT = VotingNFT(_nftAddress);
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
         _grantRole(FOUNDER_ROLE, msg.sender);
 
         currentStatus = WorkflowStatus.REGISTER_CANDIDATES;
+        
     }
 
     function addCandidate(string memory _name, address _wallet) external onlyRole(ADMIN_ROLE) {
@@ -50,9 +55,12 @@ contract SimpleVotingSystem  is AccessControl {
         require(!voters[msg.sender], "You have already voted");
         require(block.timestamp >= voteStartTime + 1 hours, "Voting is not allowed at this stage");
         require(_candidateId > 0 && _candidateId <= candidateIds.length, "Invalid candidate ID");
+        require(votingNFT.balanceOf(msg.sender) == 0, "Already owns a voting NFT");
 
         voters[msg.sender] = true;
         candidates[_candidateId].voteCount += 1;
+
+        votingNFT.mint(msg.sender);
     }
 
     function getTotalVotes(uint _candidateId) public view returns (uint) {

@@ -3,9 +3,11 @@ pragma solidity 0.8.26;
 
 import {Test, console} from "forge-std/Test.sol";
 import {SimpleVotingSystem} from "../src/SimplevotingSystem.sol";
+import "../src/VotingNFT.sol";
 
 contract SimpleVotingSystemTest is Test {
   SimpleVotingSystem public votingSystem;
+  VotingNFT public votingNFT;
   address public constant OWNER = address(0x1234567890123456789012345678901234567890);
   address public voter1;
   address public voter2;
@@ -24,9 +26,12 @@ contract SimpleVotingSystemTest is Test {
     vm.deal(voter1, 10 ether);
     vm.deal(voter2, 10 ether);
     vm.deal(voter3, 10 ether);
-
+    
     vm.startPrank(OWNER);
-    votingSystem = new SimpleVotingSystem(); //msg.sender de la TX est = à l'adress du SC "SimpleVotingSystemTest"
+    VotingNFT _votingNFT = new VotingNFT();
+    votingSystem = new SimpleVotingSystem(address(_votingNFT));
+    _votingNFT.transferOwnership(address(votingSystem));
+    votingNFT = _votingNFT;
     vm.stopPrank();
   }
   
@@ -279,6 +284,33 @@ function test_voteAfterAnHour_Success() public {
     assertTrue(votingSystem.voters(voter1));
     assertEq(votingSystem.getTotalVotes(1), 1);
   
+}
+
+function test_Vote_AlreadyOwnsNFT_Revert() public {
+    vm.startPrank(OWNER);
+    votingSystem.addCandidate("Alice", voter1);
+    startVote();
+    vm.stopPrank();
+
+    vm.startPrank(address(votingSystem));
+    votingNFT.mint(voter1);
+    vm.stopPrank();
+
+    vm.startPrank(voter1);
+    vm.expectRevert("Already owns a voting NFT");
+    votingSystem.vote(1); 
+    vm.stopPrank();
+}
+function test_VotingMintsNFT() public {
+    vm.startPrank(OWNER);
+    votingSystem.addCandidate("Alice", voter1);
+    startVote();
+    vm.stopPrank();
+
+    vm.startPrank(voter1);
+    votingSystem.vote(1);
+    vm.stopPrank();
+    assertEq(votingNFT.balanceOf(voter1), 1);
 }
 
   // ============ Tests pour getTotalVotes ============
