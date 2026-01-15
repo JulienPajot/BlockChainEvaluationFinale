@@ -658,4 +658,33 @@ function test_VotingMintsNFT() public {
   }
 
 
+// ============ Tests pour getWinner ============
+function test_GetWinner_AfterCompletion() public {
+    vm.startPrank(OWNER);
+    votingSystem.addCandidate("Alice", voter1);
+    votingSystem.addCandidate("Bob", voter2);
+    startVote();
+    vm.stopPrank();
+
+    vm.startPrank(voter1);
+    votingSystem.vote(1); 
+    vm.stopPrank();
+
+    vm.startPrank(voter2);
+    votingSystem.vote(2); 
+    vm.stopPrank();
+
+    vm.startPrank(voter3);
+    votingSystem.vote(1); 
+    vm.stopPrank();
+
+    vm.startPrank(OWNER);
+    votingSystem.setWorkflowStatus(SimpleVotingSystem.WorkflowStatus.COMPLETED);
+    vm.stopPrank();
+
+    SimpleVotingSystem.Candidate memory winner = votingSystem.getWinner();
+    assertEq(winner.id, 1);        
+    assertEq(winner.name, "Alice");
+    assertEq(winner.voteCount, 2);
+}
 }

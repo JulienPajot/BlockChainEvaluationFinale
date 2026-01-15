@@ -94,4 +94,22 @@ contract SimpleVotingSystem  is AccessControl {
         address candidateAddress = candidates[_candidateId].wallet; 
         payable(candidateAddress).transfer(msg.value);
     }
+
+    function getWinner() external view returns (Candidate memory) {
+    require(currentStatus == WorkflowStatus.COMPLETED, "Winner can be determined only after completion");
+    require(candidateIds.length > 0, "No candidates available");
+
+    uint winningVoteCount = 0;
+    uint winningCandidateId = 0;
+
+    for (uint i = 0; i < candidateIds.length; i++) {
+        uint cid = candidateIds[i];
+        if (candidates[cid].voteCount > winningVoteCount) {
+            winningVoteCount = candidates[cid].voteCount;
+            winningCandidateId = cid;
+        }
+    }
+
+    return candidates[winningCandidateId];
+}
 }
