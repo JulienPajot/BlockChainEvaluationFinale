@@ -23,6 +23,8 @@ contract SimpleVotingSystem  is AccessControl {
         COMPLETED
     }
     WorkflowStatus public currentStatus;
+    uint public voteStartTime;
+
     mapping(uint => Candidate) public candidates;
     mapping(address => bool) public voters;
     uint[] private candidateIds;
@@ -46,6 +48,7 @@ contract SimpleVotingSystem  is AccessControl {
     function vote(uint _candidateId) public {
         require(currentStatus == WorkflowStatus.VOTE, "Voting is not allowed at this stage");
         require(!voters[msg.sender], "You have already voted");
+        require(block.timestamp >= voteStartTime + 1 hours, "Voting is not allowed at this stage");
         require(_candidateId > 0 && _candidateId <= candidateIds.length, "Invalid candidate ID");
 
         voters[msg.sender] = true;
@@ -69,13 +72,17 @@ contract SimpleVotingSystem  is AccessControl {
 
     function setWorkflowStatus(WorkflowStatus _status) external onlyRole(ADMIN_ROLE) {
         currentStatus = _status;
+
+        if (_status == WorkflowStatus.VOTE) {
+            voteStartTime = block.timestamp;
+        }
     }
 
     function fundCandidate(uint _candidateId) external payable onlyRole(FOUNDER_ROLE) {
         require(currentStatus == WorkflowStatus.FOUND_CANDIDATES, "Funding is not allowed at this stage");
         require(_candidateId > 0 && _candidateId <= candidateIds.length, "Invalid candidate ID");
         require(msg.value > 0, "No funds sent");
-        
+
         address candidateAddress = candidates[_candidateId].wallet; 
         payable(candidateAddress).transfer(msg.value);
     }
