@@ -30,12 +30,8 @@ contract SimpleVotingSystemTest is Test {
     vm.stopPrank();
   }
 
-  // ============ Tests d'initialisation ============
 
-  function test_InitialState() public view {
-    assertEq(votingSystem.owner(), OWNER);
-    assertEq(votingSystem.getCandidatesCount(), 0);
-  }
+ 
 
   // ============ Tests pour addCandidate ============
 
@@ -97,6 +93,21 @@ contract SimpleVotingSystemTest is Test {
     assertEq(votingSystem.getCandidatesCount(), 1);
     SimpleVotingSystem.Candidate memory candidate = votingSystem.getCandidate(1);
     assertEq(candidate.name, "John Doe");
+  }
+
+  function test_AdminRole_CanAddCandidate() public {
+    vm.startPrank(OWNER);
+    votingSystem.addCandidate("Alice");
+    vm.stopPrank();
+
+    assertEq(votingSystem.getCandidatesCount(), 1);
+  }
+
+  function test_NonAdmin_CannotAddCandidate() public {
+    vm.startPrank(voter1);
+    vm.expectRevert();
+    votingSystem.addCandidate("Alice");
+    vm.stopPrank();
   }
 
   // ============ Tests pour vote ============
@@ -479,36 +490,4 @@ contract SimpleVotingSystemTest is Test {
     assertFalse(votingSystem.voters(voter2));
   }
 
-  // ============ Tests de changement de propriétaire ============
-
-  function test_TransferOwnership_NewOwnerCanAddCandidate() public {
-    address newOwner = makeAddr("newOwner");
-    vm.deal(newOwner, 10 ether);
-
-    vm.startPrank(OWNER);
-    votingSystem.transferOwnership(newOwner);
-    vm.stopPrank();
-
-    vm.startPrank(newOwner);
-    votingSystem.addCandidate("New Candidate");
-    vm.stopPrank();
-
-    assertEq(votingSystem.getCandidatesCount(), 1);
-    SimpleVotingSystem.Candidate memory candidate = votingSystem.getCandidate(1);
-    assertEq(candidate.name, "New Candidate");
-  }
-
-  function test_TransferOwnership_OldOwnerCannotAddCandidate() public {
-    address newOwner = makeAddr("newOwner");
-    vm.deal(newOwner, 10 ether);
-
-    vm.startPrank(OWNER);
-    votingSystem.transferOwnership(newOwner);
-    vm.stopPrank();
-
-    vm.startPrank(OWNER);
-    vm.expectRevert();
-    votingSystem.addCandidate("Should Fail");
-    vm.stopPrank();
-  }
 }

@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract SimpleVotingSystem  is Ownable{
+contract SimpleVotingSystem  is AccessControl {
     
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     
@@ -18,7 +18,10 @@ contract SimpleVotingSystem  is Ownable{
     mapping(address => bool) public voters;
     uint[] private candidateIds;
 
-    constructor() Ownable(msg.sender) {}
+    constructor() {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(ADMIN_ROLE, msg.sender);
+    }
 
     function addCandidate(string memory _name) external onlyRole(ADMIN_ROLE) {
 
